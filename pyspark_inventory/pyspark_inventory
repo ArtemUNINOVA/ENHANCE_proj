@@ -1,0 +1,174 @@
+#instal the pyspark
+!pip install pyspark
+
+#add google drive to be able to upload the data set
+from google.colab import drive
+drive.mount('/content/drive.')
+
+# Import SparkSession
+from pyspark.sql import SparkSession
+
+# Create a Spark Session
+spark = SparkSession.builder.appName("Inventory").getOrCreate()
+
+#data set path /content/drive./MyDrive/inventory/train.csv
+%time
+#get the data 
+input_row_data = spark.read.csv('/content/drive./MyDrive/inventory/train.csv', header = True, inferSchema = True)
+
+#show the spark data frame of the data set
+input_row_data.show()
+
+#get the structure or a schema of the dataset
+input_row_data.printSchema()
+
+#encoding the date time feature using the unix_timestamp
+from pyspark.sql.functions import col, unix_timestamp
+data_enc = input_row_data.withColumn("date_enc", unix_timestamp(col("date"), format='yyyy-MM-dd'))
+
+#Vector assembler is the tool provided by pyspark that we need to create a single vector combining the input
+#features that are used to predict the output feature
+#vector assembler only supports certain types of data like integer and boolean, for instance,
+#the date and time format is not supported that is why we need to encode the values to feed the ML algorithm
+from pyspark.ml.feature import VectorAssembler
+vecAssmebler_training = VectorAssembler(inputCols = ["store", "item", "date_enc"], outputCol="grouped_features")
+
+output_data = vecAssmebler_training.transform(data_enc)
+output_data.show()
+
+#split the data set onto train and test
+train_data, test_data = final_data.randomSplit([0.75, 0.25])
+
+#machine learning part, three approaches are used linear regression, decision tree and random forest
+#linear regression
+from pyspark.ml.regression import LinearRegression
+regression_model = LinearRegression(featuresCol = 'grouped_features', labelCol = 'sales')
+regression_model = regression_model.fit(train_data)
+
+regression_model_pred = regression_model.transform(test_data)
+regression_model_pred.show()
+
+
+import matplotlib.pyplot as plt
+
+y_val_prediction = [val.prediction for val in regression_model_pred.select('prediction').collect()]
+y_val_sales = [val.sales for val in regression_model_pred.select('sales').collect()]
+
+fig_1_lg = plt.figure()
+fig_1_lg.set_figwidth(10)
+fig_1_lg.set_figheight(10)
+
+plt.plot(y_val_sales, label='real values')
+
+plt.ylabel('sales')
+plt.xlabel('time')
+plt.title('Real sales data')
+
+plt.legend()
+plt.show()
+
+fig_2_lg = plt.figure()
+fig_2_lg.set_figwidth(10)
+fig_2_lg.set_figheight(10)
+
+plt.plot(y_val_prediction, label='predicted values')
+
+plt.ylabel('demand')
+plt.xlabel('time')
+plt.title('Linear regression predictions plot')
+
+plt.legend()
+plt.show()
+
+
+#decision tree
+from pyspark.ml.regression import DecisionTreeRegressor
+
+decision_tree_model = DecisionTreeRegressor(featuresCol = 'grouped_features', labelCol = 'sales', maxDepth = 20, maxBins = 30)
+decision_tree_model = decision_tree_model.fit(train_data)
+
+decision_tree_pred = decision_tree_model.transform(test_data)
+decision_tree_pred.show()
+
+#plot for decision tree
+y_val_prediction_dt = [val.prediction for val in decision_tree_pred.select('prediction').collect()]
+y_val_sales_dt = [val.sales for val in decision_tree_pred.select('sales').collect()]
+
+fig_1_dt = plt.figure()
+fig_1_dt.set_figwidth(10)
+fig_1_dt.set_figheight(10)
+
+plt.plot(y_val_sales_dt, label='real values')
+
+plt.ylabel('sales')
+plt.xlabel('time')
+plt.title('Real Sales Data')
+
+plt.legend()
+plt.show()
+
+fig_2_dt = plt.figure()
+fig_2_dt.set_figwidth(10)
+fig_2_dt.set_figheight(10)
+
+plt.plot(y_val_prediction_dt, label='predicted values')
+
+plt.ylabel('sales')
+plt.xlabel('time')
+plt.title('Decision Tree predictions plot')
+
+plt.legend()
+plt.show()
+
+
+#random forest
+from pyspark.ml.regression import RandomForestRegressor
+
+random_forest_model = RandomForestRegressor(featuresCol = 'grouped_features', labelCol = 'sales')
+random_forest_model = random_forest_model.fit(train_data)
+
+random_forest_pred = random_forest_model.transform(test_data)
+random_forest_pred.show()
+
+
+#plot for random forest
+y_val_prediction_rf = [val.prediction for val in random_forest_pred.select('prediction').collect()]
+y_val_sales_rf = [val.sales for val in random_forest_pred.select('sales').collect()]
+
+fig_1_dt = plt.figure()
+fig_1_dt.set_figwidth(10)
+fig_1_dt.set_figheight(10)
+
+plt.plot(y_val_sales_rf, label='real values')
+
+plt.ylabel('sales')
+plt.xlabel('time')
+plt.title('Real Sales Data')
+
+plt.legend()
+plt.show()
+
+fig_2_dt = plt.figure()
+fig_2_dt.set_figwidth(10)
+fig_2_dt.set_figheight(10)
+
+plt.plot(y_val_prediction_rf, label='predicted values')
+
+plt.ylabel('sales')
+plt.xlabel('time')
+plt.title('Decision Tree predictions plot')
+
+plt.legend()
+plt.show()
+
+#evaluate performance through RMSE metric
+from pyspark.ml.evaluation import RegressionEvaluator
+
+eval = RegressionEvaluator(labelCol = 'sales', predictionCol = 'prediction', metricName = 'rmse')
+regression_rmse = eval.evaluate(regression_model_pred)
+decision_tree_rmse = eval.evaluate(decision_tree_pred)
+random_forest_rmse = eval.evaluate(random_forest_pred)
+
+print('regression_rmse = ', regression_rmse)
+print('decision_tree_rmse = ', decision_tree_rmse)
+print('random_forest_rmse = ', random_forest_rmse)
