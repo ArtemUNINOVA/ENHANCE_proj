@@ -45,4 +45,108 @@ scaler = MinMaxScaler(feature_range=(0, 1))
 dataset_E = scaler.fit_transform(dataset_E)
 print(dataset_E.shape[0], dataset_E.shape[1])
 
+# split into train and test sets
+train_size = int(len(dataset_E) * 0.70)
+test_size = len(dataset_E) - train_size
+train, test = dataset_E[0:train_size,:], dataset_E[train_size:len(dataset_E),:]
+print(len(train), len(test))
 
+# convert an array of values into a dataset matrix
+def create_dataset(dataset, backsteps):
+    dataX, dataY = [], []
+    for i in range(len(dataset)-backsteps-1):
+        a = dataset[i:(i+backsteps), 0]
+        dataX.append(a)
+        dataY.append(dataset[i + backsteps, 0])
+    return np.array(dataX), np.array(dataY)
+    
+#create the test and train datasets, define the number of back steps
+backsteps = 12
+trainX, trainY = create_dataset(train, backsteps)
+testX, testY = create_dataset(test, backsteps)
+
+print(trainX.shape)
+#reshape into appropriate format to be fed to LSTM [samples, time_steps, features]
+trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
+testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
+
+print(trainX.shape)
+
+# create and fit the LSTM network
+model = Sequential()
+model.add(LSTM(128, return_sequences= True, input_shape=(1, backsteps)))
+model.add(LSTM(64, return_sequences= True))
+model.add(LSTM(32, return_sequences= True))
+model.add(LSTM(16))
+model.add(Dense(1))
+model.summary()
+model.compile(loss='mean_squared_error', optimizer='adam')
+model.fit(np.array(trainX), np.array(trainY), epochs=75, batch_size=64)
+
+
+# create and fit the LSTM network
+model = Sequential()
+model.add(LSTM(128, return_sequences= True, input_shape=(1, backsteps)))
+model.add(LSTM(64, return_sequences= True))
+model.add(LSTM(32, return_sequences= True))
+model.add(LSTM(16))
+model.add(Dense(1))
+model.summary()
+model.compile(loss='mean_squared_error', optimizer='adam')
+model.fit(np.array(trainX), np.array(trainY), epochs=75, batch_size=64)
+
+# make predictions
+trainPredict = model.predict(trainX)
+testPredict = model.predict(testX)
+
+#invert the predictions
+testPredict = scaler.inverse_transform(testPredict)
+testY = scaler.inverse_transform([testY])
+
+# calculate root mean squared error
+testScore = np.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
+print('RMSE Score: %.2f RMSE' % (testScore))
+
+n=backsteps
+real_data = test[n:]
+plt.plot(scaler.inverse_transform(real_data))
+plt.plot(testPredict)
+plt.show()
+
+
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_excel("/content/drive./MyDrive/inventory/stock2018_A.xlsx",header=0)
+
+data['Datetime'] = pd.to_datetime(data['Datetime'], format= "%d/%m/%Y %H-%M")
+data = data.set_index(['Datetime'])
+
+
+data['Security_Type_D'] = 18
+data['Security_Type_E'] = 19
+
+data['3five_Type_D'] = 28
+data['3five_Type_E'] = 25
+
+plt.figure(1)
+plt.plot(data.index,data['Type_D'],label='Type_D inventory level')
+plt.plot(data.index,data['3five_Type_D'],label='Overstock reference')
+plt.plot(data.index,data['Security_Type_D'],label='Security level')
+plt.fill_between(data.index,data['Type_D'],data['3five_Type_D'], where=(data['Type_D']>data['3five_Type_D']), color='red', alpha=0.25)
+plt.legend()
+plt.title('Type_D Inventory levels 2018')
+plt.xlabel('Date')
+plt.ylabel('Nº Packages')
+
+plt.figure(2)
+plt.plot(data.index,data['Type_E'],label='Type_E inventory level')
+plt.plot(data.index,data['3five_Type_E'],label='Overstock reference')
+plt.plot(data.index,data['Security_Type_E'],label='Security level')
+plt.fill_between(data.index,data['Type_E'],data['3five_Type_E'], where=(data['Type_E']>data['3five_Type_E']), color='red', alpha=0.25)
+plt.legend()
+plt.title('Type_E Inventory levels 2018')
+plt.xlabel('Date')
+plt.ylabel('Nº Packages')
+plt.show()
