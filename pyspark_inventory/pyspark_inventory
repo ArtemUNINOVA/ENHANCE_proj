@@ -26,6 +26,11 @@ input_row_data.printSchema()
 from pyspark.sql.functions import col, unix_timestamp
 data_enc = input_row_data.withColumn("date_enc", unix_timestamp(col("date"), format='yyyy-MM-dd'))
 
+data_enc = data_enc.filter(data_enc.store == '1')
+data_enc = data_enc.filter(data_enc.item == '1')
+data_enc.show()
+
+
 #Vector assembler is the tool provided by pyspark that we need to create a single vector combining the input
 #features that are used to predict the output feature
 #vector assembler only supports certain types of data like integer and boolean, for instance,
@@ -33,11 +38,21 @@ data_enc = input_row_data.withColumn("date_enc", unix_timestamp(col("date"), for
 from pyspark.ml.feature import VectorAssembler
 vecAssmebler_training = VectorAssembler(inputCols = ["store", "item", "date_enc"], outputCol="grouped_features")
 
+#data_enc = data_enc.filter(data_enc.store == 1)
+#data_enc.show()
+
 output_data = vecAssmebler_training.transform(data_enc)
 output_data.show()
 
+
+#prepare the final data frame for training data
+final_data = output_data.select("grouped_features", "sales")
+final_data.show()
+
+
 #split the data set onto train and test
 train_data, test_data = final_data.randomSplit([0.75, 0.25])
+
 
 #machine learning part, three approaches are used linear regression, decision tree and random forest
 #linear regression
@@ -49,36 +64,55 @@ regression_model_pred = regression_model.transform(test_data)
 regression_model_pred.show()
 
 
+import pyspark.sql.functions as func
+from pyspark.sql.types import ArrayType, DoubleType
+
+#function to convert DenseVector to array
+def split_array_to_list(col):
+  def to_list(v):
+    return v.toArray().tolist()
+  return func.udf(to_list, ArrayType(DoubleType()))(col)
+  
+  
 import matplotlib.pyplot as plt
 
-y_val_prediction = [val.prediction for val in regression_model_pred.select('prediction').collect()]
-y_val_sales = [val.sales for val in regression_model_pred.select('sales').collect()]
+#dissassemble the vector to extract time, remove other columns and rename
+rg_time_column = regression_model_pred.select(split_array_to_list(func.col("grouped_features")).alias("split_int")).select([func.col("split_int")[i] for i in range(3)])
+rg_cols_drop = ['split_int[0]', 'split_int[1]']
+rg_time_column = rg_time_column.drop(*rg_cols_drop)
+rg_time_column = rg_time_column.select(col("split_int[2]").alias("date"))
 
-fig_1_lg = plt.figure()
-fig_1_lg.set_figwidth(10)
-fig_1_lg.set_figheight(10)
 
-plt.plot(y_val_sales, label='real values')
+from pyspark.sql.functions import monotonically_increasing_id, row_number
+from pyspark.sql.window import Window
 
-plt.ylabel('sales')
-plt.xlabel('time')
-plt.title('Real sales data')
+#set indexes for the join operation
+rg_time_column = rg_time_column.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
+regression_model_pred = regression_model_pred.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
 
-plt.legend()
-plt.show()
+#delete the index column
+regression_model_pred = regression_model_pred.join(rg_time_column, on=["colindex"]).drop("colindex")
+regression_model_pred.show()
 
-fig_2_lg = plt.figure()
-fig_2_lg.set_figwidth(10)
-fig_2_lg.set_figheight(10)
 
-plt.plot(y_val_prediction, label='predicted values')
+from pyspark.sql.functions import from_utc_timestamp
+from pyspark.sql.functions import to_date
 
-plt.ylabel('demand')
-plt.xlabel('time')
-plt.title('Linear regression predictions plot')
+rm_output_df = regression_model_pred.withColumn("timestamp", to_date(func.to_timestamp(regression_model_pred["date"])))
+rm_output_df.show()
 
-plt.legend()
-plt.show()
+
+#ploting the values
+y_val_prediction = [val.prediction for val in rm_output_df.select('prediction').collect()]
+y_val_sales = [val.sales for val in rm_output_df.select('sales').collect()]
+x_val_date = [val.date for val in rm_output_df.select('date').collect()]
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,7))
+
+axes[0].plot(x_val_date, y_val_sales)
+axes[1].plot(x_val_date, y_val_prediction)
+
+fig.tight_layout()
 
 
 #decision tree
@@ -90,35 +124,38 @@ decision_tree_model = decision_tree_model.fit(train_data)
 decision_tree_pred = decision_tree_model.transform(test_data)
 decision_tree_pred.show()
 
-#plot for decision tree
-y_val_prediction_dt = [val.prediction for val in decision_tree_pred.select('prediction').collect()]
-y_val_sales_dt = [val.sales for val in decision_tree_pred.select('sales').collect()]
 
-fig_1_dt = plt.figure()
-fig_1_dt.set_figwidth(10)
-fig_1_dt.set_figheight(10)
+#dissassemble the vector to extract time, remove other columns and rename
+dt_time_column = regression_model_pred.select(split_array_to_list(func.col("grouped_features")).alias("split_int")).select([func.col("split_int")[i] for i in range(3)])
+dt_cols_drop = ['split_int[0]', 'split_int[1]']
+dt_time_column = dt_time_column.drop(*dt_cols_drop)
+dt_time_column = dt_time_column.select(col("split_int[2]").alias("date"))
 
-plt.plot(y_val_sales_dt, label='real values')
 
-plt.ylabel('sales')
-plt.xlabel('time')
-plt.title('Real Sales Data')
+#set indexes for the join operation, merge two dataframes, one is the date
+dt_time_column = dt_time_column.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
+decision_tree_pred = decision_tree_pred.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
 
-plt.legend()
-plt.show()
+#delete the index column
+decision_tree_pred = decision_tree_pred.join(dt_time_column, on=["colindex"]).drop("colindex")
+decision_tree_pred.show()
 
-fig_2_dt = plt.figure()
-fig_2_dt.set_figwidth(10)
-fig_2_dt.set_figheight(10)
 
-plt.plot(y_val_prediction_dt, label='predicted values')
+dt_output_df = decision_tree_pred.withColumn("timestamp", to_date(func.to_timestamp(decision_tree_pred["date"])))
+dt_output_df.show()
 
-plt.ylabel('sales')
-plt.xlabel('time')
-plt.title('Decision Tree predictions plot')
 
-plt.legend()
-plt.show()
+#ploting the values
+y_val_prediction = [val.prediction for val in dt_output_df.select('prediction').collect()]
+y_val_sales = [val.sales for val in dt_output_df.select('sales').collect()]
+x_val_date = [val.date for val in dt_output_df.select('date').collect()]
+
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,7))
+
+axes[0].plot(x_val_date, y_val_sales)
+axes[1].plot(x_val_date, y_val_prediction)
+
+fig.tight_layout()
 
 
 #random forest
@@ -131,40 +168,43 @@ random_forest_pred = random_forest_model.transform(test_data)
 random_forest_pred.show()
 
 
-#plot for random forest
-y_val_prediction_rf = [val.prediction for val in random_forest_pred.select('prediction').collect()]
-y_val_sales_rf = [val.sales for val in random_forest_pred.select('sales').collect()]
+#dissassemble the vector to extract time, remove other columns and rename
+rf_time_column = regression_model_pred.select(split_array_to_list(func.col("grouped_features")).alias("split_int")).select([func.col("split_int")[i] for i in range(3)])
+rf_cols_drop = ['split_int[0]', 'split_int[1]']
+rf_time_column = rf_time_column.drop(*dt_cols_drop)
+rf_time_column = rf_time_column.select(col("split_int[2]").alias("date"))
 
-fig_1_dt = plt.figure()
-fig_1_dt.set_figwidth(10)
-fig_1_dt.set_figheight(10)
 
-plt.plot(y_val_sales_rf, label='real values')
+#set indexes for the join operation, merge two dataframes, one is the date
+rf_time_column = rf_time_column.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
+random_forest_pred = random_forest_pred.withColumn("colindex", row_number().over(Window.orderBy(monotonically_increasing_id())))
 
-plt.ylabel('sales')
-plt.xlabel('time')
-plt.title('Real Sales Data')
+#delete the index column
+random_forest_pred = random_forest_pred.join(rf_time_column, on=["colindex"]).drop("colindex")
+random_forest_pred.show()
 
-plt.legend()
-plt.show()
 
-fig_2_dt = plt.figure()
-fig_2_dt.set_figwidth(10)
-fig_2_dt.set_figheight(10)
+rf_output_df = random_forest_pred.withColumn("timestamp", to_date(func.to_timestamp(random_forest_pred["date"])))
+rf_output_df.show()
 
-plt.plot(y_val_prediction_rf, label='predicted values')
 
-plt.ylabel('sales')
-plt.xlabel('time')
-plt.title('Decision Tree predictions plot')
+#ploting the values
+y_val_prediction = [val.prediction for val in rf_output_df.select('prediction').collect()]
+y_val_sales = [val.sales for val in rf_output_df.select('sales').collect()]
+x_val_date = [val.date for val in rf_output_df.select('date').collect()]
 
-plt.legend()
-plt.show()
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,7))
+
+axes[0].plot(x_val_date, y_val_sales)
+axes[1].plot(x_val_date, y_val_prediction)
+
+fig.tight_layout()
+
 
 #evaluate performance through RMSE metric
 from pyspark.ml.evaluation import RegressionEvaluator
 
-eval = RegressionEvaluator(labelCol = 'sales', predictionCol = 'prediction', metricName = 'rmse')
+eval_rmse = RegressionEvaluator(labelCol = 'sales', predictionCol = 'prediction', metricName = 'rmse')
 regression_rmse = eval.evaluate(regression_model_pred)
 decision_tree_rmse = eval.evaluate(decision_tree_pred)
 random_forest_rmse = eval.evaluate(random_forest_pred)
