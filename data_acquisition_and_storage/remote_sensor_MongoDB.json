@@ -1,0 +1,372 @@
+[
+    {
+        "id": "d37b2f0bf73c28ab",
+        "type": "tab",
+        "label": "Flow 6",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "bcbb37b8d9e7d342",
+        "type": "inject",
+        "z": "d37b2f0bf73c28ab",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 100,
+        "wires": [
+            [
+                "6eb16ddb73d3e8b3"
+            ]
+        ]
+    },
+    {
+        "id": "262c0b322c91bd1b",
+        "type": "inject",
+        "z": "d37b2f0bf73c28ab",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "reset",
+        "payloadType": "str",
+        "x": 110,
+        "y": 180,
+        "wires": [
+            [
+                "6eb16ddb73d3e8b3"
+            ]
+        ]
+    },
+    {
+        "id": "6eb16ddb73d3e8b3",
+        "type": "function",
+        "z": "d37b2f0bf73c28ab",
+        "name": "Drop after 2",
+        "func": "let count = context.get(\"count\") || 0;\n\nif (msg.payload !== \"reset\") {\n    if(count < 2) {\n        count += 1;\n        node.status({ text:`count: ${ count }`});\n        context.set(\"count\",count);\n        return msg;\n    } else {\n        node.status({text:'limit reached'});\n        return null;\n    }\n\n} else {\n    context.set(\"count\",0);\n    node.status({text:'reset'});\n    return null;\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 290,
+        "y": 140,
+        "wires": [
+            [
+                "799fcbab896e95f1"
+            ]
+        ]
+    },
+    {
+        "id": "799fcbab896e95f1",
+        "type": "http request",
+        "z": "d37b2f0bf73c28ab",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "https://api.openweathermap.org/data/2.5/weather?q=Lisbon&appid=582b0a651980c588155ba638a2ea0089",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 450,
+        "y": 220,
+        "wires": [
+            [
+                "2b1b110b819dab70",
+                "352764b9afca5acf",
+                "c96edf0300b39dee"
+            ]
+        ]
+    },
+    {
+        "id": "2b1b110b819dab70",
+        "type": "debug",
+        "z": "d37b2f0bf73c28ab",
+        "name": "raw_output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 610,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "352764b9afca5acf",
+        "type": "debug",
+        "z": "d37b2f0bf73c28ab",
+        "name": "temperature",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload.main.temp",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "c96edf0300b39dee",
+        "type": "function",
+        "z": "d37b2f0bf73c28ab",
+        "name": "filterData",
+        "func": "var temp = msg.payload.main.temp;\nvar humidity = msg.payload.main.humidity;\nvar city = msg.payload.name;\nvar curDate = new Date();\n\nvar data = {\n    \"temp\": temp,\n    \"humidity\": humidity,\n    \"name\": city,\n    \"date\": curDate\n}\n\nmsg.payload = data;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 320,
+        "wires": [
+            [
+                "4a96e0a2108dacaa",
+                "090b96993114d285"
+            ]
+        ]
+    },
+    {
+        "id": "4a96e0a2108dacaa",
+        "type": "debug",
+        "z": "d37b2f0bf73c28ab",
+        "name": "filteredData",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "090b96993114d285",
+        "type": "mongodb out",
+        "z": "d37b2f0bf73c28ab",
+        "mongodb": "8a5945581887707b",
+        "name": "",
+        "collection": "weather_data",
+        "payonly": false,
+        "upsert": false,
+        "multi": false,
+        "operation": "insert",
+        "x": 700,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "3d85d039fbab57d2",
+        "type": "inject",
+        "z": "d37b2f0bf73c28ab",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 80,
+        "y": 460,
+        "wires": [
+            [
+                "2283077565d2ed87"
+            ]
+        ]
+    },
+    {
+        "id": "2283077565d2ed87",
+        "type": "mongodb in",
+        "z": "d37b2f0bf73c28ab",
+        "mongodb": "8a5945581887707b",
+        "name": "",
+        "collection": "weather_data",
+        "operation": "find",
+        "x": 280,
+        "y": 540,
+        "wires": [
+            [
+                "41312d8a8eb2e2f1",
+                "b9eb7c7fdadf5956"
+            ]
+        ]
+    },
+    {
+        "id": "41312d8a8eb2e2f1",
+        "type": "debug",
+        "z": "d37b2f0bf73c28ab",
+        "name": "RawMongoData",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 440,
+        "wires": []
+    },
+    {
+        "id": "b9eb7c7fdadf5956",
+        "type": "function",
+        "z": "d37b2f0bf73c28ab",
+        "name": "formatData",
+        "func": "let labels = []\nlet data = []\n\nvar myArray = msg.payload\n\nfor (let index = 0; index < myArray.length; ++index) {\n    const timestamp = myArray[index].payload.date;\n    const temp = myArray[index].payload.temp;\n    const foo = { \"x\": timestamp, \"y\": temp}\n    data.push(foo);\n\n}\n\nmsg.payload = [{\n    \"series\": [\"MyPlot\"],\n    \"data\": [data],\n    \"labels\": labels\n}]\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 430,
+        "y": 620,
+        "wires": [
+            [
+                "3cf17dc70e5ee2bb",
+                "71d16715c44334f7"
+            ]
+        ]
+    },
+    {
+        "id": "3cf17dc70e5ee2bb",
+        "type": "debug",
+        "z": "d37b2f0bf73c28ab",
+        "name": "debug 11",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "71d16715c44334f7",
+        "type": "ui_chart",
+        "z": "d37b2f0bf73c28ab",
+        "name": "",
+        "group": "3da36874.a9b2c8",
+        "order": 2,
+        "width": 0,
+        "height": 0,
+        "label": "chart",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 690,
+        "y": 640,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8a5945581887707b",
+        "type": "mongodb",
+        "hostname": "127.0.0.1",
+        "topology": "direct",
+        "connectOptions": "",
+        "port": "27017",
+        "db": "ZDMP_2",
+        "name": ""
+    },
+    {
+        "id": "3da36874.a9b2c8",
+        "type": "ui_group",
+        "name": "Initiation",
+        "tab": "befeb13c.bfa17",
+        "order": 1,
+        "disp": true,
+        "width": "5",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "befeb13c.bfa17",
+        "type": "ui_tab",
+        "name": "Demo",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    }
+]

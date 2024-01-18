@@ -1,0 +1,157 @@
+[
+    {
+        "id": "a399499d87350165",
+        "type": "tab",
+        "label": "Flow 5",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "b5f19a74324c7e8f",
+        "type": "inject",
+        "z": "a399499d87350165",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 140,
+        "y": 220,
+        "wires": [
+            [
+                "94aa2c8e55da4f87"
+            ]
+        ]
+    },
+    {
+        "id": "94aa2c8e55da4f87",
+        "type": "exec",
+        "z": "a399499d87350165",
+        "command": "python C:\\Users\\Artem\\Desktop\\Python\\UNINOVA\\enhance\\forecasting_batteries\\python_files\\data_processing.py",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "python_executable",
+        "x": 350,
+        "y": 140,
+        "wires": [
+            [
+                "30c815bd91d5babb"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "30c815bd91d5babb",
+        "type": "function",
+        "z": "a399499d87350165",
+        "name": "check_if_exists",
+        "func": "if (msg.payload = \"successfully created\") {\n    msg.payload = 'file has been created or already exists';\n    return msg;\n} else {\n    console.log('the file has not been found')\n}",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 260,
+        "wires": [
+            [
+                "8b6881b6c7d6bdff",
+                "5a6421294cbdcdce"
+            ]
+        ]
+    },
+    {
+        "id": "8b6881b6c7d6bdff",
+        "type": "debug",
+        "z": "a399499d87350165",
+        "name": "debug 12",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "5a6421294cbdcdce",
+        "type": "file in",
+        "z": "a399499d87350165",
+        "name": "get_csv",
+        "filename": "C:\\Users\\Artem\\Desktop\\Python\\UNINOVA\\enhance\\forecasting_batteries\\python_files\\updated_df",
+        "filenameType": "str",
+        "format": "utf8",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 440,
+        "y": 380,
+        "wires": [
+            [
+                "e65c6e7d12c81201"
+            ]
+        ]
+    },
+    {
+        "id": "e65c6e7d12c81201",
+        "type": "csv",
+        "z": "a399499d87350165",
+        "name": "",
+        "sep": ",",
+        "hdrin": "",
+        "hdrout": "none",
+        "multi": "mult",
+        "ret": "\\n",
+        "temp": "",
+        "skip": "0",
+        "strings": true,
+        "include_empty_strings": "",
+        "include_null_values": "",
+        "x": 630,
+        "y": 340,
+        "wires": [
+            [
+                "57183fa8e22044aa"
+            ]
+        ]
+    },
+    {
+        "id": "57183fa8e22044aa",
+        "type": "debug",
+        "z": "a399499d87350165",
+        "name": "csv_parser_output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 240,
+        "wires": []
+    }
+]
