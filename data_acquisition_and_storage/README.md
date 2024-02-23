@@ -17,7 +17,7 @@
 3. Using npm, the one can install the Node-red. For more information check the video: https://www.youtube.com/watch?v=hEpeobDyj8k
 4. After Node-red is installed it can be run locally in the web browser: http://localhost:1880/
 5. Now, the MongoDB need to be installed (optionaly, but recommended also GUI, e.g. Compass). More details, here: https://www.mongodb.com/docs/manual/installation/
-6. When the MongoDB is installed create a database, database in the Node-red flow is named: "ZDMP_2". The name can be changed in the Node-red flow, depending on the name of established database. If the MongoDB runs locally (127.0.0.1) it is typically available at the port 27017.
-7. To use MongoDB from wihtin the Node-red, the one needs to install additional nodes that enable connection to MongoDB. This can be done in the Palette Manager of Node-red. The needed package is called: Palette Manager "node-red-node-mongodb". Moreover, the dashboard nodes are needed, package name is: "node-red-dashboard".
+6. When the MongoDB is installed create a database, database in the Node-red flow is named: "ZDMP_2". The one should consider this while creating the DB, and, either give the same name or change it in the Node-red flow. If the MongoDB is deployed locally (127.0.0.1) it is typically available at the port 27017.
+7. To use MongoDB from wihtin the Node-red, the one needs to install additional nodes that enable connection to MongoDB. This can be done in the Palette Manager of Node-red. The needed package is called: "node-red-node-mongodb". Moreover, the dashboard nodes are needed for plotting, package name is: "node-red-dashboard".
 8. When all the steps are done, the flows that are stored in the JSON files can be imported. Node-red has the import option, the one only needs to copy the JSON content into the import window of Node-red and click on import button.
 9. Further details on the presented use-cases can be found in the demonstration video. 
