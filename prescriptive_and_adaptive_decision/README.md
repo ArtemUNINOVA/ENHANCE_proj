@@ -3,7 +3,7 @@
 - File "untitled_project" with a trained LSTM model that is used for classification of samples, classifying a sample belongs to the red zone interval (last 30 samples before engine failure) or not.
 - The .ipynb file containing the source code for data pre-processing, model definition, training and plotting.
 
-There are two ways to use the .ipynb file: either to open it with Jupyter Notebook or with Google Colab. If Google Colab is used no further installations are needed besides the availability of the web browser. In the case if Jupyter Notebook is used the **pre-requisites are as follows**:
+There are two ways to use the .ipynb file: either to open it with Jupyter Notebook or with Google Colab. If Google Colab is used, no further installations are needed besides the availability of the web browser. In the case if Jupyter Notebook is used the **pre-requisites are as follows**:
 - Installed Python's interpreter.
 - Installed Anaconda distribution that already contains jupyter notebook.
 - A set of libraries that can be installed using, for instance, pip package manager.
