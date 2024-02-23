@@ -1,7 +1,7 @@
 **The repository contains following elements:**
 - Folder with dataset in .xlsx format. The will be pre-processed by the Python script.
 - Python script that will pre-process dataset. This Python script is executed from within a Node-red flow.
-- JSON files with that is needed to import the Node-red flow into the Node-red environment.
+- JSON files that are needed to import the Node-red flows into the Node-red environment.
 
 **Pre-requisites:**
 - Installed Node-red environment. As Node-red relies on Node.js, the one needs to instal the Node.js before installing Node-red.
