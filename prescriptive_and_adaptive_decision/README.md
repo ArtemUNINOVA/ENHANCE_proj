@@ -1,5 +1,5 @@
 **The repository contains following elements:**
-- Folder with data stored in txt files in a .csv format. Dataset contains raw data with different parameters of jet engines reflecting the "health" conditions of engines. The train files contain data for model training, test files contain data for model testing and finaly the RUL files contain the ground truth, i.e. right lables for the testing dataset. The latter is needed to compare the efficiency of the ML model.
+- Folder with data stored in txt files in a .csv format. Dataset contains raw data with different parameters of jet engines reflecting the "health" conditions of engines. The train files contain data for model training, test files contain data for model testing and finaly the RUL files contain the ground truth, i.e. right lables for the testing dataset. The latter is needed to assess the efficiency of the ML model.
 - File "untitled_project" with a trained LSTM model that is used for classification of samples, classifying a sample belongs to the red zone interval (last 30 samples before engine failure) or not.
 - The .ipynb file containing the source code for data pre-processing, model definition, training and plotting.
 
