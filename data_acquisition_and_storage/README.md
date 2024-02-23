@@ -12,7 +12,7 @@
 - Optional: registration at [Openweathermap](https://openweathermap.org/)https://openweathermap.org/ to use cutomized API.
 
 **Detailed steps to deploy the use-case:**
-- First, the one needs to install the Node.js. This can be done from official page on Node.js (https://nodejs.org/en/download).
+- First, the one needs to install the Node.js. It can be downloaded from official page on Node.js (https://nodejs.org/en/download).
 - Then install the npm package manager. After Node.js is installed this can be done via command line.
 - Using npm, the one can install the Node-red. For more information check the video: https://www.youtube.com/watch?v=hEpeobDyj8k
 - After Node-red is installed it can be run locally: http://localhost:1880/
