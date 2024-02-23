@@ -12,7 +12,7 @@ There are two ways to use the .ipynb file: either to open it with Jupyter Notebo
 - Create a folder, where the use-case files will be deplyoed.
 - Copy all the files into the folder.
 - Open Jupyter Notebook and open the .ipynb file ("RUL_jet_engine_predictions_final").
-- Change the path to the dataset, so it corresponds to the path of newly created folder.
-- Install the libraries that are in the beginning of the file.
+- Change the path to the datasets, so it corresponds to the path of newly created folder.
+- Install the libraries that are specified in the beginning of the file.
 - After all libraries are installed, click the "Run" button.
 - Further details on presented use-cases can be found in the demonstration video.
