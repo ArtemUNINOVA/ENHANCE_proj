@@ -1,5 +1,5 @@
 **The repository contains following elements:**
-- Folder with dataset in .xlsx format. The will be pre-processed by the Python script.
+- Folder with dataset in .xlsx format. This will be pre-processed by the Python script.
 - Python script that will pre-process dataset. This Python script is executed from within a Node-red flow.
 - JSON files that are needed to import the Node-red flows into the Node-red environment.
 
